@@ -1,0 +1,36 @@
+import pandas as pd
+import numpy as np
+
+dfmis01 = pd.read_excel(r'C:\Users\shrey\Desktop\ValidateDemo.xlsx')
+
+dfmis02 = dfmis01.isnull().sum()
+
+dfmist = dfmis02.replace(0, pd.np.nan).dropna(axis=0, how='any').astype(int)
+
+columnnames = dfmist.keys()
+
+dfmist.sort_index(ascending = True)
+lst= []
+for i in columnnames:
+   lst.append(np.where(dfmis01[i].isnull() == True)[0])
+
+#create a consolidated final dataframe fot the table using the lists/ datafraes
+alist = pd.DataFrame({'lst':lst})
+columnnames= pd.DataFrame({'columnnames':columnnames})
+columnnames.sort_index(ascending = True)
+alist = pd.concat([columnnames,alist],axis=1)
+alist= alist.set_index('columnnames')
+MissingDataTable = pd.concat([dfmist,alist],axis=1)
+
+#write to excel
+writer = pd.ExcelWriter(r'C:\Users\shrey\Desktop\Test10.xlsx',engine='xlsxwriter')   
+workbook=writer.book
+
+# Copy Dummy Data to new workbook
+dfmis01.to_excel(writer,sheet_name='Dummy Data',startrow=0 , startcol=0)
+dfmis01.index
+#Create new sheet to show validation tables
+worksheet2 = workbook.add_worksheet('Validation')
+writer.sheets['Validation'] = worksheet2
+MissingDataTable.to_excel(writer,sheet_name='Validation',startrow=2 , startcol=2)
+writer.close()
