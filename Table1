@@ -1,0 +1,66 @@
+import pandas as pd
+#import numpy as np
+
+dfGold= pd.read_excel(r'C:\Users\shrey\Desktop\ValidateDemo.xlsx')
+dfnew = pd.read_excel(r'C:\Users\shrey\Desktop\DemoDemo.xlsx')
+
+#1 Missing Columns from GoldCopy
+    #Find only Column names
+OriginalColumnNames = dfGold.keys()
+CheckFileColumnNames = dfnew.keys()
+MissingColumns = set(dfGold.keys()).difference(dfnew.keys())
+NewColumns = set(dfnew.keys()).difference(dfGold.keys())
+
+
+#2 Duplicate Columns
+duplicateColumnNames = set()
+      
+# Iterate through all the columns 
+for x in range(dfnew.shape[1]):
+        # Take column at xth index.
+        col = dfnew.iloc[:, x]
+          
+        # Iterate through all the columns in DataFrame from (x + 1)th index to last index
+        for y in range(x + 1, dfnew.shape[1]):
+              
+            # Take column at yth index.
+            otherCol = dfnew.iloc[:, y]
+              
+            # Check if two columns at x & y = or not, if equal then add to the set
+            if col.equals(otherCol):
+               duplicateColumnNames.add(dfnew.columns.values[x])
+               duplicateColumnNames.add(dfnew.columns.values[y])
+               
+del col, x , y, otherCol  
+              
+#3 Columns with missing data
+#Find number of missing items in each column
+ColumnsWithMissingData = dfnew.isnull().sum()
+#Keep only Columns where cells are missing from above list
+ColumnsWithMissingData = ColumnsWithMissingData.replace(0, pd.np.nan).dropna(axis=0, how='any').astype(int)
+#Collect column names
+ColumnsWithMissingData = ColumnsWithMissingData.keys()
+
+#Form the final dataframe for table
+ValidationSummaryTable = pd.DataFrame(index=['Missing Columns (Compared to GC)','Duplicate Columns','Additional Columns','Columns With Missing Data'], columns =['Number of Columns','List of Column'])
+#ValidationSummaryTable.at[] = MissingColumns
+ValidationSummaryTable['List of Column'][0] = list(MissingColumns)
+ValidationSummaryTable['List of Column'][1] = list(duplicateColumnNames)
+ValidationSummaryTable['List of Column'][2] = list(NewColumns)
+ValidationSummaryTable['List of Column'][3] = list(ColumnsWithMissingData)
+
+ValidationSummaryTable['Number of Columns'][0] = len(MissingColumns)
+ValidationSummaryTable['Number of Columns'][1] = len(duplicateColumnNames)
+ValidationSummaryTable['Number of Columns'][2] = len(NewColumns)
+ValidationSummaryTable['Number of Columns'][3] = len(ColumnsWithMissingData)
+
+#Paste in workbook
+writer = pd.ExcelWriter(r'C:\Users\shrey\Desktop\table1.xlsx',engine='xlsxwriter')   
+workbook=writer.book
+
+worksheet2 = workbook.add_worksheet('Validation')                             
+writer.sheets['Validation'] = worksheet2
+ValidationSummaryTable.to_excel(writer,sheet_name='Validation',startrow=2 , startcol=2)
+worksheet2.set_column(4,4,50)
+
+writer.close()
